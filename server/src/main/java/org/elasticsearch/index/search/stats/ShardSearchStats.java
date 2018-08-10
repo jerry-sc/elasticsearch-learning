@@ -33,6 +33,9 @@ import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
 
+/**
+ * shard 搜索统计，以监听器的形式存在
+ */
 public final class ShardSearchStats implements SearchOperationListener {
 
     private final StatsHolder totalStats = new StatsHolder();

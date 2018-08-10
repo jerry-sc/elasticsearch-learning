@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * 每个索引的路由表
  * The {@link IndexRoutingTable} represents routing information for a single
  * index. The routing table maintains a list of all shards in the index. A
  * single shard in this context has one more instances namely exactly one

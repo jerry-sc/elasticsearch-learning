@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
+ * 自定义的一个字符串实现，保证安全
  * A String implementations which allows clearing the underlying char array.
  */
 public final class SecureString implements CharSequence, Closeable {

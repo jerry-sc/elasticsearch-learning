@@ -719,6 +719,7 @@ public final class SearchPhaseController extends AbstractComponent {
 
     /**
      * Returns a new ArraySearchPhaseResults instance. This might return an instance that reduces search responses incrementally.
+     * @param numShards 主分片数量
      */
     InitialSearchPhase.ArraySearchPhaseResults<SearchPhaseResult> newSearchPhaseResults(SearchRequest request, int numShards) {
         SearchSourceBuilder source = request.source();

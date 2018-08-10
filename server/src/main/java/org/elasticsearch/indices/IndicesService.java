@@ -140,6 +140,9 @@ import static org.elasticsearch.common.collect.MapBuilder.newMapBuilder;
 import static org.elasticsearch.common.util.CollectionUtils.arrayAsArrayList;
 import static org.elasticsearch.index.query.AbstractQueryBuilder.parseInnerQueryBuilder;
 
+/**
+ * 可以将这种名字带复数的类，理解为Node层的，内部维护了各个索引的映射
+ */
 public class IndicesService extends AbstractLifecycleComponent
     implements IndicesClusterStateService.AllocatedIndices<IndexShard, IndexService>, IndexService.ShardStoreDeleter {
 
@@ -153,13 +156,34 @@ public class IndicesService extends AbstractLifecycleComponent
     private final AnalysisRegistry analysisRegistry;
     private final IndexNameExpressionResolver indexNameExpressionResolver;
     private final IndexScopedSettings indexScopedSettings;
+
+
+
+    /**
+     * 字段缓存
+     */
     private final IndicesFieldDataCache indicesFieldDataCache;
+    /**
+     * 请求缓存
+     */
+    private final IndicesRequestCache indicesRequestCache;
+    /**
+     * 查询缓存
+     */
+    private final IndicesQueryCache indicesQueryCache;
     private final CacheCleaner cacheCleaner;
+
+
+
     private final ThreadPool threadPool;
     private final CircuitBreakerService circuitBreakerService;
     private final BigArrays bigArrays;
     private final ScriptService scriptService;
     private final Client client;
+
+    /**
+     * 索引名称 到 索引服务的映射关系
+     */
     private volatile Map<String, IndexService> indices = emptyMap();
     private final Map<Index, List<PendingDelete>> pendingDeletes = new HashMap<>();
     private final AtomicInteger numUncompletedDeletes = new AtomicInteger();
@@ -168,8 +192,6 @@ public class IndicesService extends AbstractLifecycleComponent
     private final NamedWriteableRegistry namedWriteableRegistry;
     private final IndexingMemoryController indexingMemoryController;
     private final TimeValue cleanInterval;
-    private final IndicesRequestCache indicesRequestCache;
-    private final IndicesQueryCache indicesQueryCache;
     private final MetaStateService metaStateService;
 
     @Override
@@ -191,8 +213,10 @@ public class IndicesService extends AbstractLifecycleComponent
         this.shardsClosedTimeout = settings.getAsTime(INDICES_SHARDS_CLOSED_TIMEOUT, new TimeValue(1, TimeUnit.DAYS));
         this.analysisRegistry = analysisRegistry;
         this.indexNameExpressionResolver = indexNameExpressionResolver;
+
         this.indicesRequestCache = new IndicesRequestCache(settings);
         this.indicesQueryCache = new IndicesQueryCache(settings);
+
         this.mapperRegistry = mapperRegistry;
         this.namedWriteableRegistry = namedWriteableRegistry;
         indexingMemoryController = new IndexingMemoryController(settings, threadPool,

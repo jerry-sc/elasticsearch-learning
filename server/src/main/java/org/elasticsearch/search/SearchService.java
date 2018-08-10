@@ -326,8 +326,18 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         });
     }
 
+
+    /**
+     * 在每个shard上执行 query phase 的查询
+     * @param request
+     * @param task
+     * @return
+     * @throws IOException
+     */
     SearchPhaseResult executeQueryPhase(ShardSearchRequest request, SearchTask task) throws IOException {
+        // 创建搜索上下文
         final SearchContext context = createAndPutContext(request);
+        // 搜索流程监听器
         final SearchOperationListener operationListener = context.indexShard().getSearchOperationListener();
         context.incRef();
         boolean queryPhaseSuccess = false;
@@ -337,6 +347,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             long time = System.nanoTime();
             contextProcessing(context);
 
+            // 判断请求是否允许被Cache，如果允许，则检查Cache中是否已经有结果，如果有则直接读取Cache，如果没有则继续执行后续步骤，执行完后，再将结果加入Cache。
             loadOrExecuteQueryPhase(request, context);
 
             if (context.queryResult().hasSearchContext() == false && context.scrollContext() == null) {
@@ -347,6 +358,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             final long afterQueryTime = System.nanoTime();
             queryPhaseSuccess = true;
             operationListener.onQueryPhase(context, afterQueryTime - time);
+            // 如果此次查询只有一个分片，执行fetch
             if (request.numberOfShards() == 1) {
                 return executeFetchPhase(context, operationListener, afterQueryTime);
             }
@@ -549,6 +561,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     final SearchContext createContext(ShardSearchRequest request) throws IOException {
+        // 创建查询上下文
         final DefaultSearchContext context = createSearchContext(request, defaultSearchTimeout);
         try {
             if (request.scroll() != null) {
@@ -567,15 +580,18 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
 
             // pre process
             dfsPhase.preProcess(context);
+            // 会对查询语句进行进一步的补充，比如一些默认值的填充
             queryPhase.preProcess(context);
             fetchPhase.preProcess(context);
 
             // compute the context keep alive
+            // 由于Elasticsearch中有些请求之间是相互关联的，并非独立的，比如scroll请求，所以这里同时会设置Context的生命周期。
             long keepAlive = defaultKeepAlive;
             if (request.scroll() != null && request.scroll().keepAlive() != null) {
                 keepAlive = request.scroll().keepAlive().millis();
             }
             contextScrollKeepAlive(context, keepAlive);
+            // 同时会设置lowLevelCancellation是否打开，这个参数是集群级别配置，同时也能动态开关，打开后会在后面执行时做更多的检测，检测是否需要停止后续逻辑直接返回
             context.lowLevelCancellation(lowLevelCancellation);
         } catch (Exception e) {
             context.close();
@@ -593,9 +609,12 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                                                      boolean assertAsyncActions)
             throws IOException {
         IndexService indexService = indicesService.indexServiceSafe(request.shardId().getIndex());
+        // 获得具体的 shard信息
         IndexShard indexShard = indexService.getShard(request.shardId().getId());
+        // 封装最终执行的目标
         SearchShardTarget shardTarget = new SearchShardTarget(clusterService.localNode().getId(),
                 indexShard.shardId(), request.getClusterAlias(), OriginalIndices.NONE);
+
         Engine.Searcher engineSearcher = indexShard.acquireSearcher("search");
 
         final DefaultSearchContext searchContext = new DefaultSearchContext(idGenerator.incrementAndGet(), request, shardTarget,
@@ -693,6 +712,9 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         }
     }
 
+    /**
+     * 解析查询体，转化成lucene能够执行的查询体
+     */
     private void parseSource(DefaultSearchContext context, SearchSourceBuilder source) throws SearchContextException {
         // nothing to parse...
         if (source == null) {

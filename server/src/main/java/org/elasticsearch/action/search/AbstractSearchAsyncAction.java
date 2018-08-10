@@ -59,12 +59,18 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
      **/
     private final BiFunction<String, String, Transport.Connection> nodeIdToConnection;
     private final SearchTask task;
+    /**
+     * 搜索结果汇总
+     */
     private final SearchPhaseResults<Result> results;
     private final long clusterStateVersion;
     private final Map<String, AliasFilter> aliasFilter;
     private final Map<String, Float> concreteIndexBoosts;
     private final SetOnce<AtomicArray<ShardSearchFailure>> shardFailures = new SetOnce<>();
     private final Object shardFailuresMutex = new Object();
+    /**
+     * 统计执行成功返回的shard数量
+     */
     private final AtomicInteger successfulOps = new AtomicInteger();
     private final AtomicInteger skippedOps = new AtomicInteger();
     private final TransportSearchAction.SearchTimeProvider timeProvider;
@@ -225,6 +231,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     @Override
     public final void onShardSuccess(Result result) {
         successfulOps.incrementAndGet();
+        // 统计结果
         results.consumeResult(result);
         if (logger.isTraceEnabled()) {
             logger.trace("got first-phase result from {}", result != null ? result.getSearchShardTarget() : null);
@@ -240,6 +247,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void onPhaseDone() {
+        // 执行下一阶段
         executeNextPhase(this, getNextPhase(results, this));
     }
 
@@ -309,6 +317,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     /**
+     * query 阶段执行完毕后，将结果传入到下一个阶段进行执行
      * Returns the next phase based on the results of the initial search phase
      * @param results the results of the initial search phase. Each non null element in the result array represent a successfully
      *                executed shard request

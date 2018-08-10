@@ -108,6 +108,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
+ * 该类维护了所有与lucene底层操作的接口
  * A Store provides plain access to files written by an elasticsearch index shard. Each shard
  * has a dedicated store that is uses to access Lucene's Directory which represents the lowest level
  * of file abstraction in Lucene used to read and write Lucene indices.

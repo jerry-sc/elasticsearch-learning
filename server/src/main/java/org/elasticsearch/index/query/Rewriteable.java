@@ -87,6 +87,7 @@ public interface Rewriteable<T> {
     }
 
     /**
+     * 进行查询表达式重写，例如会将时间替换等，最终得到直接可以运行的查询语句
      * Rewrites the given rewriteable and fetches pending async tasks for each round before rewriting again.
      */
     static <T extends Rewriteable<T>> void rewriteAndFetch(T original, QueryRewriteContext context, ActionListener<T>

@@ -49,6 +49,9 @@ import java.util.stream.Collectors;
 import static org.elasticsearch.common.unit.ByteSizeValue.parseBytesSizeValue;
 import static org.elasticsearch.common.unit.TimeValue.parseTimeValue;
 
+/**
+ * rest 请求，基类提供请求头、参数相关信息，具体的请求体由子类提供
+ */
 public abstract class RestRequest implements ToXContent.Params {
 
     // tchar pattern as defined by RFC7230 section 3.2.6

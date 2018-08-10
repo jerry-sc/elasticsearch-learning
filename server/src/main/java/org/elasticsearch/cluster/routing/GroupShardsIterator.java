@@ -38,6 +38,7 @@ public final class GroupShardsIterator<ShardIt extends ShardIterator> implements
      * Constructs a enw GroupShardsIterator from the given list.
      */
     public GroupShardsIterator(List<ShardIt> iterators) {
+        // 会根据shard 的编号 对所有shard进行排序，保证每次获取都一致
         CollectionUtil.timSort(iterators);
         this.iterators = iterators;
     }

@@ -252,6 +252,7 @@ public class IndexShardRoutingTable implements Iterable<ShardRouting> {
     }
 
     /**
+     * 返回活跃以及已经初始化好的分片信息
      * Returns an iterator over active and initializing shards. Making sure though that
      * its random within the active shards, and initializing shards are the last to iterate through.
      */

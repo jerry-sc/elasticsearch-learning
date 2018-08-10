@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.util.Objects;
 
 /**
+ * 节点相关的元数据
  * Metadata associated with this node. Currently only contains the unique uuid describing this node.
  * The metadata is persisted in the data folder of this node and is reused across restarts.
  */

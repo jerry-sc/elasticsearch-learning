@@ -145,6 +145,7 @@ public class SearchTransportService extends AbstractComponent {
                                  final SearchActionListener<SearchPhaseResult> listener) {
         // we optimize this and expect a QueryFetchSearchResult if we only have a single shard in the search request
         // this used to be the QUERY_AND_FETCH which doesn't exist anymore.
+        // 如果只请求一个shard 那么会在该节点上顺带做fetch操作
         final boolean fetchDocuments = request.numberOfShards() == 1;
         Supplier<SearchPhaseResult> supplier = fetchDocuments ? QueryFetchSearchResult::new : QuerySearchResult::new;
 
@@ -203,6 +204,7 @@ public class SearchTransportService extends AbstractComponent {
     }
 
     /**
+     * 获取每个node当前正在执行的任务数
      * Return a map of nodeId to pending number of search requests.
      * This is a snapshot of the current pending search and not a live map.
      */
@@ -365,6 +367,7 @@ public class SearchTransportService extends AbstractComponent {
             });
         TransportActionProxy.registerProxyAction(transportService, DFS_ACTION_NAME, DfsSearchResult::new);
 
+        // 在当前节点执行 query phase 操作
         transportService.registerRequestHandler(QUERY_ACTION_NAME, ShardSearchTransportRequest::new, ThreadPool.Names.SAME,
             new TaskAwareTransportRequestHandler<ShardSearchTransportRequest>() {
                 @Override

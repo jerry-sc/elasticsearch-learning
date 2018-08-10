@@ -168,7 +168,7 @@ final class Bootstrap {
         } catch (IOException e) {
             throw new BootstrapException(e);
         }
-
+        // 做一些本地资源的初始化、系统配置的设置
         initializeNatives(
                 environment.tmpFile(),
                 BootstrapSettings.MEMORY_LOCK_SETTING.get(settings),
@@ -272,6 +272,7 @@ final class Bootstrap {
     }
 
     /**
+     * 加载完毕后启动环境，真正开始初始化
      * This method is invoked by {@link Elasticsearch#main(String[])} to startup elasticsearch.
      */
     static void init(
@@ -286,6 +287,7 @@ final class Bootstrap {
         INSTANCE = new Bootstrap();
 
         final SecureSettings keystore = loadSecureSettings(initialEnv);
+        // 结合安全设置中的新配置，再一次重新创建环境
         final Environment environment = createEnvironment(foreground, pidFile, keystore, initialEnv.settings(), initialEnv.configFile());
         try {
             LogConfigurator.configure(environment);

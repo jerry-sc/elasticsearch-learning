@@ -19,7 +19,9 @@
 
 package org.elasticsearch.index.shard;
 
-
+/**
+ * shard 状态
+ */
 public enum IndexShardState {
     CREATED((byte) 0),
     RECOVERING((byte) 1),

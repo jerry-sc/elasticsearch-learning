@@ -43,8 +43,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 处理查询路由信息
+ */
 public class OperationRouting extends AbstractComponent {
 
+    /**
+     * 表示是否启用动态启发式的分片选择方式：所谓动态启发指的是：会记录之前与各个shard的请求数据进行判断
+     */
     public static final Setting<Boolean> USE_ADAPTIVE_REPLICA_SELECTION_SETTING =
             Setting.boolSetting("cluster.routing.use_adaptive_replica_selection", false,
                     Setting.Property.Dynamic, Setting.Property.NodeScope);
@@ -96,9 +102,11 @@ public class OperationRouting extends AbstractComponent {
                                                            @Nullable String preference,
                                                            @Nullable ResponseCollectorService collectorService,
                                                            @Nullable Map<String, Long> nodeCounts) {
+        // 获得此次搜索的这些索引的所有路由信息
         final Set<IndexShardRoutingTable> shards = computeTargetedShards(clusterState, concreteIndices, routing);
         final Set<ShardIterator> set = new HashSet<>(shards.size());
         for (IndexShardRoutingTable shard : shards) {
+            // 会根据用户请求参数preference 来得到该 shard 对应的所有活跃分片信息（包括主和副）
             ShardIterator iterator = preferenceActiveShardIterator(shard,
                     clusterState.nodes().getLocalNodeId(), clusterState.nodes(), preference, collectorService, nodeCounts);
             if (iterator != null) {
@@ -115,6 +123,7 @@ public class OperationRouting extends AbstractComponent {
         final Set<IndexShardRoutingTable> set = new HashSet<>();
         // we use set here and not list since we might get duplicates
         for (String index : concreteIndices) {
+            // 获得该索引的所有路由信息
             final IndexRoutingTable indexRouting = indexRoutingTable(clusterState, index);
             final IndexMetaData indexMetaData = indexMetaData(clusterState, index);
             final Set<String> effectiveRouting = routing.get(index);
@@ -134,12 +143,24 @@ public class OperationRouting extends AbstractComponent {
         return set;
     }
 
+    /**
+     * 会根据用户请求参数preference 来决定此次查询找哪些分片
+     * @param indexShard 某一shard 包含主和副
+     * @param localNodeId
+     * @param nodes
+     * @param preference
+     * @param collectorService
+     * @param nodeCounts
+     * @return 某个shardID 对应的round robin 执行后的所有活跃分片信息
+     */
     private ShardIterator preferenceActiveShardIterator(IndexShardRoutingTable indexShard, String localNodeId,
                                                         DiscoveryNodes nodes, @Nullable String preference,
                                                         @Nullable ResponseCollectorService collectorService,
                                                         @Nullable Map<String, Long> nodeCounts) {
         if (preference == null || preference.isEmpty()) {
+            // 是否配置了集群物理部署配置
             if (awarenessAttributes.length == 0) {
+                // 是否启用启发式的分片调度分配策略，后台会根据历史请求数据进行选择分配
                 if (useAdaptiveReplicaSelection) {
                     return indexShard.activeInitializingShardsRankedIt(collectorService, nodeCounts);
                 } else {

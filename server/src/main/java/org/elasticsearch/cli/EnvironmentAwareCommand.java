@@ -82,11 +82,15 @@ public abstract class EnvironmentAwareCommand extends Command {
         putSystemPropertyIfSettingIsMissing(settings, "path.data", "es.path.data");
         putSystemPropertyIfSettingIsMissing(settings, "path.home", "es.path.home");
         putSystemPropertyIfSettingIsMissing(settings, "path.logs", "es.path.logs");
-
+        // 为命令创建相应的运行环境后，开始运行命令
         execute(terminal, options, createEnv(terminal, settings));
     }
 
-    /** Create an {@link Environment} for the command to use. Overrideable for tests. */
+
+     /**
+     * Create an {@link Environment} for the command to use. Overrideable for tests.
+     * @param settings 来自命令行终端的设置
+     */
     protected Environment createEnv(final Terminal terminal, final Map<String, String> settings) throws UserException {
         final String esPathConf = System.getProperty("es.path.conf");
         if (esPathConf == null) {

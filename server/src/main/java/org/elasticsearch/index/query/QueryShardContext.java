@@ -66,6 +66,7 @@ import java.util.function.LongSupplier;
 import static java.util.Collections.unmodifiableMap;
 
 /**
+ * 用于lucene查询 的上下文对象
  * Context object used to create lucene queries on the shard level.
  */
 public class QueryShardContext extends QueryRewriteContext {
@@ -299,6 +300,9 @@ public class QueryShardContext extends QueryRewriteContext {
         });
     }
 
+    /**
+     * 转化builder 为lucene中能够执行的
+     */
     public ParsedQuery toQuery(QueryBuilder queryBuilder) {
         return toQuery(queryBuilder, q -> {
             Query query = q.toQuery(this);

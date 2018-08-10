@@ -259,6 +259,9 @@ public class CollectionUtils {
         }
     }
 
+    /**
+     * 旋转列表，参数d指定了列表右移的距离
+     */
     private static class RotatedList<T> extends AbstractList<T> implements RandomAccess {
 
         private final List<T> in;
@@ -289,7 +292,8 @@ public class CollectionUtils {
             return in.size();
         }
 
-    };
+    }
+
     public static void sort(final BytesRefArray bytes, final int[] indices) {
         sort(new BytesRefBuilder(), new BytesRefBuilder(), bytes, indices);
     }

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
+ * FETCH 阶段， 会将query 阶段合并得到的TOP N 结果集ID ，然后从各个分片中获取具体信息
  * This search phase merges the query results from the previous phase together and calculates the topN hits for this search.
  * Then it reaches out to all relevant shards to fetch the topN hits.
  */

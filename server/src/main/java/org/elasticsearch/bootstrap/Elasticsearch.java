@@ -92,6 +92,13 @@ class Elasticsearch extends EnvironmentAwareCommand {
         return elasticsearch.main(args, terminal);
     }
 
+    /**
+     * 执行启动命令
+     * @param terminal 输入输出终端
+     * @param options 命令行参数
+     * @param env 启动环境
+     * @throws UserException
+     */
     @Override
     protected void execute(Terminal terminal, OptionSet options, Environment env) throws UserException {
         if (options.nonOptionArguments().isEmpty() == false) {

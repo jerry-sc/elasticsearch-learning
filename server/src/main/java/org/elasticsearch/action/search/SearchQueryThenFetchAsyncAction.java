@@ -35,6 +35,23 @@ final class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<Se
 
     private final SearchPhaseController searchPhaseController;
 
+    /**
+     *
+     * @param logger logger
+     * @param searchTransportService 远程搜索传输服务
+     * @param nodeIdToConnection 节点连接管理器
+     * @param aliasFilter
+     * @param concreteIndexBoosts
+     * @param searchPhaseController search controller
+     * @param executor 线程池
+     * @param request 此次请求
+     * @param listener 响应监听回调
+     * @param shardsIts 该索引的所有分片迭代器
+     * @param timeProvider 执行时间统计器
+     * @param clusterStateVersion version
+     * @param task 此次搜索任务
+     * @param clusters cluster
+     */
     SearchQueryThenFetchAsyncAction(final Logger logger, final SearchTransportService searchTransportService,
             final BiFunction<String, String, Transport.Connection> nodeIdToConnection, final Map<String, AliasFilter> aliasFilter,
             final Map<String, Float> concreteIndexBoosts, final SearchPhaseController searchPhaseController, final Executor executor,
@@ -49,6 +66,7 @@ final class SearchQueryThenFetchAsyncAction extends AbstractSearchAsyncAction<Se
 
     protected void executePhaseOnShard(final SearchShardIterator shardIt, final ShardRouting shard,
                                        final SearchActionListener<SearchPhaseResult> listener) {
+        // 发起远程shard query请求
         getSearchTransport().sendExecuteQuery(getConnection(shardIt.getClusterAlias(), shard.currentNodeId()),
             buildShardSearchRequest(shardIt), getTask(), listener);
     }

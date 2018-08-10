@@ -24,6 +24,7 @@ import org.elasticsearch.index.shard.ShardId;
 import java.util.List;
 
 /**
+ * 每个shardID对应的分片信息，包括主和副 的迭代器
  * The {@link PlainShardIterator} is a {@link ShardsIterator} which iterates all
  * shards or a given {@link ShardId shard id}
  */

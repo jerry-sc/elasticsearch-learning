@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * 当前理解为 本地插件的控制器
  * Spawns native plugin controller processes if present. Will only work prior to a system call
  * filter being installed.
  */

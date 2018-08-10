@@ -54,6 +54,7 @@ import static org.elasticsearch.common.unit.TimeValue.timeValueMillis;
 import static org.elasticsearch.http.HttpTransportSettings.SETTING_HTTP_MAX_HEADER_SIZE;
 
 /**
+ * 用于跟踪记录当前节点上运行的任务
  * Task Manager service for keeping track of currently running tasks on the nodes
  */
 public class TaskManager extends AbstractComponent implements ClusterStateApplier {

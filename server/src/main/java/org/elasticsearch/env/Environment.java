@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
+ * 主要用于初始化各种文件保存的目录
  * The environment of where things exists.
  */
 @SuppressForbidden(reason = "configures paths for the system")
@@ -67,7 +68,7 @@ public class Environment {
 
     private final Path[] repoFiles;
 
-    private final Path configFile;
+        private final Path configFile;
 
     private final Path pluginsFile;
 

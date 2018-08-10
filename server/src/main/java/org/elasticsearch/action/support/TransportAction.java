@@ -74,11 +74,13 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
          * task. That just seems like too many objects. Thus the two versions of
          * this method.
          */
+        // 首先注册一个任务，用于跟踪监测
         Task task = taskManager.register("transport", actionName, request);
         if (task == null) {
             execute(null, request, listener);
         } else {
             execute(task, request, new ActionListener<Response>() {
+                // 任务执行结果回调函数
                 @Override
                 public void onResponse(Response response) {
                     taskManager.unregister(task);
@@ -102,6 +104,7 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
     public final Task execute(Request request, TaskListener<Response> listener) {
         Task task = taskManager.register("transport", actionName, request);
         execute(task, request, new ActionListener<Response>() {
+
             @Override
             public void onResponse(Response response) {
                 if (task != null) {
@@ -125,12 +128,14 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
      * Use this method when the transport action should continue to run in the context of the current task
      */
     public final void execute(Task task, Request request, ActionListener<Response> listener) {
+        // 请求校验
         ActionRequestValidationException validationException = request.validate();
         if (validationException != null) {
             listener.onFailure(validationException);
             return;
         }
 
+        // 是否需要保持任务结果，对于查询永远是false
         if (task != null && request.getShouldStoreResult()) {
             listener = new TaskResultStoringActionListener<>(taskManager, task, listener);
         }
@@ -145,6 +150,11 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
 
     protected abstract void doExecute(Request request, ActionListener<Response> listener);
 
+    /**
+     * 用于请求过滤
+     * @param <Request>
+     * @param <Response>
+     */
     private static class RequestFilterChain<Request extends ActionRequest, Response extends ActionResponse>
             implements ActionFilterChain<Request, Response> {
 

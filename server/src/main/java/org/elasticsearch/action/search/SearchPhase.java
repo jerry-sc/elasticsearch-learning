@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
+ * 所有搜索任务的基类，包括query阶段 dfs 阶段、query 阶段
  * Base class for all individual search phases like collecting distributed frequencies, fetching documents, querying shards.
  */
 abstract class SearchPhase implements CheckedRunnable<IOException> {

@@ -77,6 +77,7 @@ import static org.elasticsearch.common.unit.SizeValue.parseSizeValue;
 import static org.elasticsearch.common.unit.TimeValue.parseTimeValue;
 
 /**
+ * 不可变类的设置类，内部使用建造者模式实现
  * An immutable settings implementation.
  */
 public final class Settings implements ToXContentFragment {
@@ -1115,6 +1116,9 @@ public final class Settings implements ToXContentFragment {
             return this;
         }
 
+        /**
+         * 合法性检测，不合法的属性会被移除
+         */
         private void processLegacyLists(Map<String, Object> map) {
             String[] array = map.keySet().toArray(new String[map.size()]);
             for (String key : array) {
@@ -1288,6 +1292,7 @@ public final class Settings implements ToXContentFragment {
         }
 
         /**
+         * 建造者模式构造对象
          * Builds a {@link Settings} (underlying uses {@link Settings}) based on everything
          * set on this builder.
          */

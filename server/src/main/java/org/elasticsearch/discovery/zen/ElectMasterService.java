@@ -42,6 +42,9 @@ public class ElectMasterService extends AbstractComponent {
     public static final Setting<Integer> DISCOVERY_ZEN_MINIMUM_MASTER_NODES_SETTING =
         Setting.intSetting("discovery.zen.minimum_master_nodes", -1, Property.Dynamic, Property.NodeScope);
 
+    /**
+     * 配置中设置的，需要多少个节点才能成为主节点
+     */
     private volatile int minimumMasterNodes;
 
     /**
@@ -81,6 +84,7 @@ public class ElectMasterService extends AbstractComponent {
         }
 
         /**
+         * 首先比较各个节点的集群状态信息，拥有最新的状态获得master资格，如果相同，那么选取ID最小的那一个
          * compares two candidates to indicate which the a better master.
          * A higher cluster state version is better
          *

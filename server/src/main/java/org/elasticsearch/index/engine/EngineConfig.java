@@ -46,7 +46,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.LongSupplier;
 
-/*
+/**
+ *  可以理解为 Lucene 配置
  * Holds all the configuration that is used to create an {@link Engine}.
  * Once {@link Engine} has been created with this object, changes to this
  * object will affect the {@link Engine} instance.

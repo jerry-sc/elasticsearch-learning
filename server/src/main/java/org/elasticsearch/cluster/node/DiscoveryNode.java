@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 
 
 /**
+ * 注意与Node类区分，这里表示的是一个集群中一个节点的逻辑表示
  * A discovery node represents a node that is part of the cluster.
  */
 public class DiscoveryNode implements Writeable, ToXContentFragment {

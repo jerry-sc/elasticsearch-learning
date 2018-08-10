@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * 自定义封装的 IndexSearch，主要定制了IndexSearch 的一些配置
  * Context-aware extension of {@link IndexSearcher}.
  */
 public class ContextIndexSearcher extends IndexSearcher implements Releasable {

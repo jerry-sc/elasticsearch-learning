@@ -73,6 +73,7 @@ public class RestSearchAction extends BaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+        // 会将Rest请求转化为ES搜索请求，可以理解为反序列化后的请求
         SearchRequest searchRequest = new SearchRequest();
         /*
          * We have to pull out the call to `source().size(size)` because
@@ -86,14 +87,17 @@ public class RestSearchAction extends BaseRestHandler {
          * be null later. If that is confusing to you then you are in good
          * company.
          */
+        // 设置查询的返回结果大小 size
         IntConsumer setSize = size -> searchRequest.source().size(size);
+        // 将rest请求进行解析到 searchRequest
         request.withContentOrSourceParamParserOrNull(parser ->
             parseSearchRequest(searchRequest, request, parser, setSize));
-
+        // 会在本地执行该请求，并注册相应搜索结果处理器，（这里是将结果写会channel）
         return channel -> client.search(searchRequest, new RestStatusToXContentListener<>(channel));
     }
 
     /**
+     * 解析请求
      * Parses the rest request on top of the SearchRequest, preserving values that are not overridden by the rest request.
      *
      * @param requestContentParser body of the request to read. This method does not attempt to read the body from the {@code request}

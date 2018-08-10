@@ -39,6 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 /**
+ * 封装了对所有shard的搜索请求，然后汇聚结果。如果对某shard（可能是主也可能是副）的请求失败，那么会对该shard的其他副本进行尝试，直到全部尝试失败
+ *
  * This is an abstract base class that encapsulates the logic to fan out to all shards in provided {@link GroupShardsIterator}
  * and collect the results. If a shard request returns a failure this class handles the advance to the next replica of the shard until
  * the shards replica iterator is exhausted. Each shard is referenced by position in the {@link GroupShardsIterator} which is later
@@ -57,6 +59,15 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
     private final int maxConcurrentShardRequests;
     private final Executor executor;
 
+    /**
+     *
+     * @param name phase name
+     * @param request search request
+     * @param shardsIts 该索引所有分片信息
+     * @param logger logger
+     * @param maxConcurrentShardRequests 每个分片最大并发数
+     * @param executor 线程池
+     */
     InitialSearchPhase(String name, SearchRequest request, GroupShardsIterator<SearchShardIterator> shardsIts, Logger logger,
                        int maxConcurrentShardRequests, Executor executor) {
         super(name);
@@ -106,6 +117,7 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
             }
             onPhaseDone();
         } else {
+            // 如果请求失败会继续请求下一个副本
             final ShardRouting nextShard = shardIt.nextOrNull();
             final boolean lastShard = nextShard == null;
             // trace log this exception
@@ -147,6 +159,7 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
             int maxConcurrentShardRequests = Math.min(this.maxConcurrentShardRequests, shardsIts.size());
             final boolean success = shardExecutionIndex.compareAndSet(0, maxConcurrentShardRequests);
             assert success;
+            // 对所有shard（主分片数量） 进行搜索请求，由于shardsIts 已经按照shardID进行编号排序
             for (int index = 0; index < maxConcurrentShardRequests; index++) {
                 final SearchShardIterator shardRoutings = shardsIts.get(index);
                 assert shardRoutings.skip() == false;
@@ -192,6 +205,12 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
         });
     }
 
+    /**
+     * 对shard 中的某个副本发起请求
+     * @param shardIndex index
+     * @param shardIt shard副本迭代器
+     * @param shard shard中的某一副本
+     */
     private void performPhaseOnShard(final int shardIndex, final SearchShardIterator shardIt, final ShardRouting shard) {
         /*
          * We capture the thread that this phase is starting on. When we are called back after executing the phase, we are either on the
@@ -247,6 +266,7 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
             remainingOpsOnIterator = shardsIt.remaining() + 1;
         }
         final int xTotalOps = totalOps.addAndGet(remainingOpsOnIterator);
+        // 如果所有shard都已经返回，那么该阶段执行完毕回调
         if (xTotalOps == expectedTotalOps) {
             onPhaseDone();
         } else if (xTotalOps > expectedTotalOps) {
@@ -283,6 +303,7 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
     abstract void onShardSuccess(FirstResult result);
 
     /**
+     * 对具体的某个shard 发起请求
      * Sends the request to the actual shard.
      * @param shardIt the shards iterator
      * @param shard the shard routing to send the request for

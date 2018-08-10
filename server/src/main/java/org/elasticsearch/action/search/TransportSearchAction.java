@@ -65,6 +65,9 @@ import java.util.function.LongSupplier;
 
 import static org.elasticsearch.action.search.SearchType.QUERY_THEN_FETCH;
 
+/**
+ * 会进行search 分发
+ */
 public class TransportSearchAction extends HandledTransportAction<SearchRequest, SearchResponse> {
 
     /** The maximum number of shards for a single search request. */
@@ -179,12 +182,14 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         final long relativeStartNanos = System.nanoTime();
         final SearchTimeProvider timeProvider =
                 new SearchTimeProvider(absoluteStartMillis, relativeStartNanos, System::nanoTime);
+
         ActionListener<SearchSourceBuilder> rewriteListener = ActionListener.wrap(source -> {
             if (source != searchRequest.source()) {
                 // only set it if it changed - we don't allow null values to be set but it might be already null be we want to catch
                 // situations when it possible due to a bug changes to null
                 searchRequest.source(source);
             }
+            // 获得集群状态
             final ClusterState clusterState = clusterService.state();
             final Map<String, OriginalIndices> remoteClusterIndices = remoteClusterService.groupIndices(searchRequest.indicesOptions(),
                 searchRequest.indices(), idx -> indexNameExpressionResolver.hasIndexOrAlias(idx, clusterState));
@@ -212,6 +217,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         if (searchRequest.source() == null) {
             rewriteListener.onResponse(searchRequest.source());
         } else {
+            // 查询语句重写，主要是为了加快语句在lucene中的搜索速度，例如会移除重复的语句等
             Rewriteable.rewriteAndFetch(searchRequest.source(), searchService.getRewriteContext(timeProvider::getAbsoluteStartMillis),
                 rewriteListener);
         }
@@ -291,31 +297,40 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         if (localIndices.indices().length == 0 && remoteClusterIndices.isEmpty() == false) {
             indices = Index.EMPTY_ARRAY; // don't search on _all if only remote indices were specified
         } else {
+            // 索引名字解析，解析为最终的索引名称
             indices = indexNameExpressionResolver.concreteIndices(clusterState, searchRequest.indicesOptions(),
                 timeProvider.getAbsoluteStartMillis(), localIndices.indices());
         }
         Map<String, AliasFilter> aliasFilter = buildPerIndexAliasFilter(searchRequest, clusterState, indices, remoteAliasMap);
+        // 解析 routing 表达式，如果没有设置routing，则为null
         Map<String, Set<String>> routingMap = indexNameExpressionResolver.resolveSearchRouting(clusterState, searchRequest.routing(),
             searchRequest.indices());
         String[] concreteIndices = new String[indices.length];
         for (int i = 0; i < indices.length; i++) {
             concreteIndices[i] = indices[i].getName();
         }
+        // 获取集群中每个节点运行的查询任务数
         Map<String, Long> nodeSearchCounts = searchTransportService.getPendingSearchRequests();
-        GroupShardsIterator<ShardIterator> localShardsIterator = clusterService.operationRouting().searchShards(clusterState,
-                concreteIndices, routingMap, searchRequest.preference(), searchService.getResponseCollectorService(), nodeSearchCounts);
-        GroupShardsIterator<SearchShardIterator> shardIterators = mergeShardsIterators(localShardsIterator, localIndices,
-            remoteShardIterators);
+        // 获取该索引的所有分片的迭代器集合，例如该某索引有5个主分片，那么就有5个迭代器，每个迭代器指定了该分片的 真正分片信息（包括主和副）
+        GroupShardsIterator<ShardIterator> localShardsIterator = clusterService.operationRouting()
+            .searchShards(clusterState, concreteIndices, routingMap, searchRequest.preference(),
+                searchService.getResponseCollectorService(), nodeSearchCounts);
+        // 迭代器合并，如果不是跨集群访问，可以忽略
+        GroupShardsIterator<SearchShardIterator> shardIterators = mergeShardsIterators(localShardsIterator,
+            localIndices, remoteShardIterators);
 
+        // 如果此次请求shard数量超过上限，那么会拒绝此次请求
         failIfOverShardCountLimit(clusterService, shardIterators.size());
 
         Map<String, Float> concreteIndexBoosts = resolveIndexBoosts(searchRequest, clusterState);
 
+        // 如果此次搜索只会涉及一个shard，那么会在那个节点上进行 query 和 fetch两个操作，不会再分开操作
         // optimize search type for cases where there is only one shard group to search on
         if (shardIterators.size() == 1) {
             // if we only have one group, then we always want Q_T_F, no need for DFS, and no need to do THEN since we hit one shard
             searchRequest.searchType(QUERY_THEN_FETCH);
         }
+        // 如果开启了搜索建议
         if (searchRequest.isSuggestOnly()) {
             // disable request cache if we have only suggest
             searchRequest.requestCache(false);
@@ -327,6 +342,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             }
         }
 
+        // 建立连接
         final DiscoveryNodes nodes = clusterState.nodes();
         BiFunction<String, String, Transport.Connection> connectionLookup = (clusterName, nodeId) -> {
             final DiscoveryNode discoveryNode = clusterName == null ? nodes.get(nodeId) : remoteConnections.apply(clusterName, nodeId);
@@ -335,6 +351,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             }
             return searchTransportService.getConnection(clusterName, discoveryNode);
         };
+        // 一个开关，如果对某个shard的请求量太大了，那么会拒绝请求
         if (searchRequest.isMaxConcurrentShardRequestsSet() == false) {
             // we try to set a default of max concurrent shard requests based on
             // the node count but upper-bound it by 256 by default to keep it sane. A single
@@ -344,6 +361,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             searchRequest.setMaxConcurrentShardRequests(Math.min(256, nodeCount
                 * IndexMetaData.INDEX_NUMBER_OF_SHARDS_SETTING.getDefault(Settings.EMPTY)));
         }
+        // 是否可以进行预过滤，从而减少对shard的请求
         boolean preFilterSearchShards = shouldPreFilterSearchShards(searchRequest, shardIterators);
         searchAsyncAction(task, searchRequest, shardIterators, timeProvider, connectionLookup, clusterState.version(),
             Collections.unmodifiableMap(aliasFilter), concreteIndexBoosts, listener, preFilterSearchShards, clusters).start();
@@ -372,6 +390,9 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         throw new UnsupportedOperationException("the task parameter is required");
     }
 
+    /**
+     * 启动异步执行该任务
+     */
     private AbstractSearchAsyncAction searchAsyncAction(SearchTask task, SearchRequest searchRequest,
                                                         GroupShardsIterator<SearchShardIterator> shardIterators,
                                                         SearchTimeProvider timeProvider,
@@ -380,6 +401,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                                         Map<String, Float> concreteIndexBoosts,
                                                         ActionListener<SearchResponse> listener, boolean preFilter,
                                                         SearchResponse.Clusters clusters) {
+        // 获取查询线程池，用于并发执行各个shard的搜索任务
         Executor executor = threadPool.executor(ThreadPool.Names.SEARCH);
         if (preFilter) {
             return new CanMatchPreFilterSearchPhase(logger, searchTransportService, connectionLookup,
@@ -415,6 +437,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         }
     }
 
+    /**
+     * 如果此次请求shard数量超过上限，那么会拒绝此次请求
+     * @param clusterService
+     * @param shardCount
+     */
     private static void failIfOverShardCountLimit(ClusterService clusterService, int shardCount) {
         final long shardCountLimit = clusterService.getClusterSettings().get(SHARD_COUNT_LIMIT_SETTING);
         if (shardCount > shardCountLimit) {

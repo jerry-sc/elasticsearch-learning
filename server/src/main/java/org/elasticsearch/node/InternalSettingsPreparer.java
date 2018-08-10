@@ -92,6 +92,7 @@ public class InternalSettingsPreparer {
             throw new SettingsException("elasticsearch.json was deprecated in 5.5.0 and must be converted to elasticsearch.yml");
         }
 
+        // 从配置文件中加载配置之后，在集合命令行系统变量的配置进行一次整合，得到最终的环境
         output = Settings.builder(); // start with a fresh output
         Path path = environment.configFile().resolve("elasticsearch.yml");
         if (Files.exists(path)) {

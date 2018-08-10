@@ -92,6 +92,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 
+/**
+ * 可以认为是与lucene最接近的一层，与lucene交互
+ */
 public abstract class Engine implements Closeable {
 
     public static final String SYNC_COMMIT_ID = "sync_id";

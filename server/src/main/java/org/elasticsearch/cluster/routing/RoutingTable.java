@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
+ * 全局范围的routing table
  * Represents a global cluster-wide routing table for all indices including the
  * version of the current routing state.
  *

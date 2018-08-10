@@ -77,6 +77,7 @@ public abstract class BaseRestHandler extends AbstractComponent implements RestH
     @Override
     public final void handleRequest(RestRequest request, RestChannel channel, NodeClient client) throws Exception {
         // prepare the request for execution; has the side effect of touching the request parameters
+        // 请求解析
         final RestChannelConsumer action = prepareRequest(request, client);
 
         // validate unconsumed params, but we must exclude params used to format the response
@@ -93,7 +94,7 @@ public abstract class BaseRestHandler extends AbstractComponent implements RestH
         }
 
         usageCount.increment();
-        // execute the action
+        // execute the action 执行请求
         action.accept(channel);
     }
 
