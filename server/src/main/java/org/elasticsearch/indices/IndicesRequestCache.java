@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
 /**
+ * 该类管理 该运行ES 的节点上的所有索引(shard)的 request cache
  * The indices request cache allows to cache a shard level request stage responses, helping with improving
  * similar requests that are potentially expensive (because of aggs for example). The cache is fully coherent
  * with the semantics of NRT (the index reader version is part of the cache key), and relies on size based
