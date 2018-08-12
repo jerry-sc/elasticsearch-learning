@@ -100,6 +100,9 @@ public final class IndicesRequestCache extends AbstractComponent implements Remo
         cache.invalidateAll();
     }
 
+    /**
+     * 由用户发起的清除缓存
+     */
     void clear(CacheEntity entity) {
         keysToClean.add(new CleanupKey(entity, -1));
         cleanCache();
@@ -166,6 +169,7 @@ public final class IndicesRequestCache extends AbstractComponent implements Remo
     }
 
     /**
+     * 可以将该接口认为是一个缓存操作的回调接口
      * Basic interface to make this cache testable.
      */
     interface CacheEntity extends Accountable {
@@ -284,7 +288,9 @@ public final class IndicesRequestCache extends AbstractComponent implements Remo
     }
 
 
-
+    /**
+     * 该方法由清除器 1分钟定时启动清除
+     */
     synchronized void cleanCache() {
         final ObjectSet<CleanupKey> currentKeysToClean = new ObjectHashSet<>();
         final ObjectSet<Object> currentFullClean = new ObjectHashSet<>();
@@ -300,6 +306,7 @@ public final class IndicesRequestCache extends AbstractComponent implements Remo
                 currentKeysToClean.add(cleanupKey);
             }
         }
+        // 由于request cache是node共享的，所以这里需要清除某个shard时，需要遍历cache中与该shard相关的key进行remove
         if (!currentKeysToClean.isEmpty() || !currentFullClean.isEmpty()) {
             for (Iterator<Key> iterator = cache.keys().iterator(); iterator.hasNext(); ) {
                 Key key = iterator.next();

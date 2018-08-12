@@ -25,6 +25,7 @@ import org.elasticsearch.index.cache.request.ShardRequestCache;
 import org.elasticsearch.index.shard.IndexShard;
 
 /**
+ * 该基类主要嵌入了统计功能
  * Abstract base class for the an {@link IndexShard} level {@linkplain IndicesRequestCache.CacheEntity}.
  */
 abstract class AbstractIndexShardCacheEntity implements IndicesRequestCache.CacheEntity {

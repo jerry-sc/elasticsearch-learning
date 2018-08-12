@@ -1121,6 +1121,7 @@ public class IndicesService extends AbstractLifecycleComponent
             if (settings.getValue(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING) == false) {
                 return false;
             } else if (context.size() != 0) {
+                // 只会缓存hits = 0的结果
                 // If no request cache query parameter and shard request cache
                 // is enabled in settings don't cache for requests with size > 0
                 return false;

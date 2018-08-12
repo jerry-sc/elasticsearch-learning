@@ -23,6 +23,7 @@ import org.apache.lucene.util.Accountable;
 import org.elasticsearch.common.metrics.CounterMetric;
 
 /**
+ * 缓存统计情况
  * Tracks the portion of the request cache in use for a particular shard.
  */
 public final class ShardRequestCache {

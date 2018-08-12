@@ -170,9 +170,15 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     private final IndexCache indexCache;
     private final Store store;
     private final InternalIndexingStats internalIndexingStats;
+    /**
+     * shard 搜索统计，以监听器的形式存在
+     */
     private final ShardSearchStats searchStats = new ShardSearchStats();
     private final ShardGetService getService;
     private final ShardIndexWarmerService shardWarmerService;
+    /**
+     * 缓存命中情况统计，不要被ShardRequestCache 命名方式误导
+     */
     private final ShardRequestCache requestCacheStats;
     private final ShardFieldData shardFieldData;
     private final ShardBitsetFilterCache shardBitsetFilterCache;
