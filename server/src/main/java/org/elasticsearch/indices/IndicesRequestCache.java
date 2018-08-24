@@ -301,6 +301,7 @@ public final class IndicesRequestCache extends AbstractComponent implements Remo
             iterator.remove();
             if (cleanupKey.readerVersion == -1 || cleanupKey.entity.isOpen() == false) {
                 // -1 indicates full cleanup, as does a closed shard
+                // 或者如果底层的 shard 已经关闭的话，那么也会进行全量clean
                 currentFullClean.add(cleanupKey.entity.getCacheIdentity());
             } else {
                 currentKeysToClean.add(cleanupKey);
@@ -313,6 +314,7 @@ public final class IndicesRequestCache extends AbstractComponent implements Remo
                 if (currentFullClean.contains(key.entity.getCacheIdentity())) {
                     iterator.remove();
                 } else {
+                    // 只清除指定 key
                     if (currentKeysToClean.contains(new CleanupKey(key.entity, key.readerVersion))) {
                         iterator.remove();
                     }

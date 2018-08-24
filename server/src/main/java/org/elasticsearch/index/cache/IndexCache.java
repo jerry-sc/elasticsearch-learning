@@ -28,6 +28,9 @@ import org.elasticsearch.index.cache.query.QueryCache;
 import java.io.Closeable;
 import java.io.IOException;
 
+/**
+ * 将bitset 与查询缓存关联了起来
+ */
 public class IndexCache extends AbstractIndexComponent implements Closeable {
 
     private final QueryCache queryCache;

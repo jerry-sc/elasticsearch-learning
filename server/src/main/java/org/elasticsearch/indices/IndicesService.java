@@ -171,6 +171,7 @@ public class IndicesService extends AbstractLifecycleComponent
      * 查询缓存
      */
     private final IndicesQueryCache indicesQueryCache;
+
     private final CacheCleaner cacheCleaner;
 
 

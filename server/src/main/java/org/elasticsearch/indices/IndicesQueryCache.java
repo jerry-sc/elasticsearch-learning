@@ -48,16 +48,23 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+/**
+ * 管理所有索引的查询缓存，是在segment做的
+ */
 public class IndicesQueryCache extends AbstractComponent implements QueryCache, Closeable {
 
-    public static final Setting<ByteSizeValue> INDICES_CACHE_QUERY_SIZE_SETTING = 
+    public static final Setting<ByteSizeValue> INDICES_CACHE_QUERY_SIZE_SETTING =
             Setting.memorySizeSetting("indices.queries.cache.size", "10%", Property.NodeScope);
-    public static final Setting<Integer> INDICES_CACHE_QUERY_COUNT_SETTING = 
+    public static final Setting<Integer> INDICES_CACHE_QUERY_COUNT_SETTING =
             Setting.intSetting("indices.queries.cache.count", 1000, 1, Property.NodeScope);
     // enables caching on all segments instead of only the larger ones, for testing only
-    public static final Setting<Boolean> INDICES_QUERIES_CACHE_ALL_SEGMENTS_SETTING = 
+    // 默认情况下只对大段进行缓存
+    public static final Setting<Boolean> INDICES_QUERIES_CACHE_ALL_SEGMENTS_SETTING =
             Setting.boolSetting("indices.queries.cache.all_segments", false, Property.NodeScope);
 
+    /**
+     * 真正缓存的实现逻辑是 lucene实现的，ES只不过做了些统计封装
+     */
     private final LRUQueryCache cache;
     private final ShardCoreKeyMap shardKeyMap = new ShardCoreKeyMap();
     private final Map<ShardId, Stats> shardStats = new ConcurrentHashMap<>();
@@ -223,6 +230,9 @@ public class IndicesQueryCache extends AbstractComponent implements QueryCache, 
         shardStats.remove(shardId);
     }
 
+    /**
+     * 对Lucene的缓存实现 增强，不过只是做了一些缓存统计，核心逻辑仍然使用lucene
+     */
     private class ElasticsearchLRUQueryCache extends LRUQueryCache {
 
         ElasticsearchLRUQueryCache(int maxSize, long maxRamBytesUsed, Predicate<LeafReaderContext> leavesToCache) {

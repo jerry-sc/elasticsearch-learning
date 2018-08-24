@@ -69,6 +69,8 @@ import static org.elasticsearch.search.query.TopDocsCollectorContext.createTopDo
 
 
 /**
+ * 对应  query_then_fetch 的query阶段. 可以在这里看到每个shard在query做的所有事情，例如首先获得文档（包括ID、积分）、是否需要重新算分、
+ * suggest功能、聚合
  * Query phase of a search request, used to run the query and get back from each shard information about the matching documents
  * (document ids and score or sort criteria) so that matches can be reduced on the coordinating node
  */
@@ -137,6 +139,7 @@ public class QueryPhase implements SearchPhase {
             assert query == searcher.rewrite(query); // already rewritten
 
             final ScrollContext scrollContext = searchContext.scrollContext();
+            // scroll 相关
             if (scrollContext != null) {
                 if (scrollContext.totalHits == -1) {
                     // first round
@@ -174,9 +177,11 @@ public class QueryPhase implements SearchPhase {
                 }
             }
 
+            // 结果收集器
             final LinkedList<QueryCollectorContext> collectors = new LinkedList<>();
             // whether the chain contains a collector that filters documents
             boolean hasFilterCollector = false;
+            // 是否有 post filter 对查询结果做过滤
             if (searchContext.parsedPostFilter() != null) {
                 // add post filters before aggregations
                 // it will only be applied to top hits
@@ -262,6 +267,7 @@ public class QueryPhase implements SearchPhase {
             }
 
             try {
+                // 执行lucene 的检索, 将结果写入收集器中
                 searcher.search(query, queryCollector);
             } catch (TimeExceededException e) {
                 assert timeoutSet : "TimeExceededException thrown even though timeout wasn't set";
